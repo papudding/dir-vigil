@@ -1,0 +1,15 @@
+[package]
+name = "dir-vigil"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+clap = { version = "4.5", features = ["derive"] }
+otpauth = "0.5.1"
+aes-gcm = "0.10"
+tempfile = "3.19.1"
+rand = "0.9"
+data-encoding = "2"
+qrcode = "0.14"

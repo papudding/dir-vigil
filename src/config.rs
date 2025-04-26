@@ -1,0 +1,25 @@
+use clap::Parser;
+use std::time::Instant;
+
+#[derive(Parser, Debug)]
+#[command(version, about)]
+pub struct Config {
+    /// Directory to monitor for deletion
+    #[arg(short, long)]
+    pub directory: String,
+
+    /// Timeout in seconds before deletion
+    #[arg(short, long)]
+    pub timeout_seconds: u64,
+
+    /// HTTP server port
+    #[arg(short, long, default_value = "8080")]
+    pub port: u16,
+}
+
+pub struct AppState {
+    pub last_active: Instant,
+    pub config: Config,
+    pub file_encypt_key: &'static [u8; 32],
+    pub serect_file_path: String,
+}

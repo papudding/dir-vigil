@@ -3,6 +3,8 @@ English | [中文说明](./README_ZH-CN.md)
 
 dir-vigil is a time-triggered automatic folder cleanup tool, with its core mechanism similar to a "dead man's switch". 
 
+> To be blunt, it's about helping you destroy data after you 💀.
+
 ## 1. core process
 The tool works through the following process:
 

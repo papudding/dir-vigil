@@ -9,7 +9,7 @@ mod util;
 use clap::Parser;
 use config::{AppState, Config};
 use handler::{keep_alive_handler, status_handler};
-use util::monitor_task;
+use util::{monitor_task, check_remain_time};
 
 pub const SECRET_FILE_NAME: &str = "user_secret.enc";
 pub const SECRET_FILE_KEY: &[u8; 32] = b"0123456789abcdef0123456789abcdef";
@@ -51,6 +51,7 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
 
     tokio::spawn(monitor_task(app_state.clone()));
+    tokio::spawn(check_remain_time(app_state.clone()));
 
     println!("Server running on {}", addr);
     axum::serve(listener, router).await.unwrap();

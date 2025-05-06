@@ -8,9 +8,17 @@ pub struct Config {
     #[arg(short, long)]
     pub directory: String,
 
-    /// Timeout in seconds before deletion
-    #[arg(short, long)]
+    /// Timeout in seconds before deletion (24 hours default)
+    #[arg(short, long, default_value = "86400")]
     pub timeout_seconds: u64,
+
+    /// warning in seconds before deletion (6 hours default)
+    #[arg(short, long, default_value = "21600")]
+    pub warning_seconds: u64,
+
+    /// checking and alerting interval of warning_seconds (20 minutes default)
+    #[arg(short, long, default_value = "1200")]
+    pub checking_interval: u64,
 
     /// HTTP server port
     #[arg(short, long, default_value = "8080")]

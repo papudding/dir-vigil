@@ -1,4 +1,5 @@
 use axum::{routing::get, Router};
+use log::info;
 use std::{sync::Arc, time::Instant};
 use tokio::sync::Mutex;
 mod config;
@@ -6,16 +7,21 @@ mod file_store;
 mod handler;
 mod totp;
 mod util;
+mod logger;
 use clap::Parser;
 use config::{AppState, Config};
 use handler::{keep_alive_handler, status_handler};
-use util::{monitor_task, check_remain_time};
+use util::{check_remain_time, monitor_task};
+use logger::init_logger;
 
 pub const SECRET_FILE_NAME: &str = "user_secret.enc";
 pub const SECRET_FILE_KEY: &[u8; 32] = b"0123456789abcdef0123456789abcdef";
 
 #[tokio::main]
 async fn main() {
+    // 初始化日志
+    init_logger();
+
     let config = Config::parse();
     if !std::path::Path::new(&config.directory).exists() {
         panic!("Directory does not exist: {}", config.directory);
@@ -23,7 +29,7 @@ async fn main() {
 
     let app_state = Arc::new(Mutex::new(AppState {
         last_active: Instant::now(),
-        config,
+        config: config.clone(),
         file_encypt_key: SECRET_FILE_KEY,
         serect_file_path: SECRET_FILE_NAME.to_string(),
     }));
@@ -34,13 +40,13 @@ async fn main() {
     } else {
         let tmp_secrt = totp::generate_totp_secret();
         file_store::encrypt_and_save(&tmp_secrt, SECRET_FILE_KEY, SECRET_FILE_NAME)
-           .expect("Failed to encrypt secret file");
+            .expect("Failed to encrypt secret file");
         tmp_secrt
     };
 
     let uri = totp::generate_totp_uri(&secret, "dir-vigil", "myself");
     util::print_qrcode(&uri);
-    println!("{}", uri);
+    info!("{}", uri);
 
     let router = Router::new()
         .route("/keepalive", get(keep_alive_handler))
@@ -51,12 +57,13 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
 
     tokio::spawn(monitor_task(app_state.clone()));
-    tokio::spawn(check_remain_time(app_state.clone()));
+    tokio::spawn(check_remain_time(
+        app_state.clone(),
+        config.clone(),
+    ));
 
-    println!("Server running on {}", addr);
+    info!("Server running on {}", addr);
     axum::serve(listener, router).await.unwrap();
 
-    
     // todo Axum返回优化
-    // todo 日志输出
 }

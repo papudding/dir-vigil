@@ -1,7 +1,7 @@
 use clap::Parser;
 use std::time::Instant;
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Default, Clone)]
 #[command(version, about)]
 pub struct Config {
     /// Directory to monitor for deletion
@@ -19,6 +19,14 @@ pub struct Config {
     /// checking and alerting interval of warning_seconds (20 minutes default)
     #[arg(short, long, default_value = "1200")]
     pub checking_interval: u64,
+
+    /// alerting url
+    #[arg(long)]
+    pub alert_url: Option<String>,
+
+    /// alerting Channel
+    #[arg(long, value_parser = ["ServerChan3", "bark"])]
+    pub alert_channel: Option<String>,
 
     /// HTTP server port
     #[arg(short, long, default_value = "8080")]

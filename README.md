@@ -33,3 +33,18 @@ The functions provided by this software (dir-vigil) involve **automatic deletion
 - Regularly check the operating status of the software to ensure that the reset mechanism is working properly
 
 **By continuing to use, you are fully aware of and accept the risks involved.**
+
+## 3. Installation
+Get the source code then build:
+```bash
+cargo build --release
+```
+
+## 4. Usage
+```bash
+./dir-vigil -d <the dir path that you wanna vigilance>
+```
+for help:
+```bash
+./dir-vigil -h
+```

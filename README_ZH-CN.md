@@ -32,3 +32,18 @@
 - 定期检查软件运行状态，确保重置机制正常工作
 
 **继续使用即表示您已充分了解并接受相关风险。**
+
+## 3. 安装
+获取源码后构建：
+```bash
+cargo build --release
+```
+
+## 4. Usage
+```bash
+./dir-vigil -d <the dir path that you wanna vigilance>
+```
+查看帮助：
+```bash
+./dir-vigil -h
+```

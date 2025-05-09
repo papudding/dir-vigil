@@ -1,12 +1,13 @@
-use crate::config::AppState;
+use crate::config::{AppState, Config};
+use log::{debug, error, info};
 use qrcode::QrCode;
+use std::io::{self, Write};
 use std::{path::Path, sync::Arc, time::Duration};
 use tokio::sync::Mutex;
-use std::io::{self, Write};
 
 pub async fn monitor_task(state: Arc<Mutex<AppState>>) {
     let check_interval = Duration::from_secs(1);
-    println!("Monitoring started...");
+    info!("Monitoring started...");
 
     loop {
         tokio::time::sleep(check_interval).await;
@@ -14,7 +15,10 @@ pub async fn monitor_task(state: Arc<Mutex<AppState>>) {
         let state = state.lock().await;
         let elapsed = state.last_active.elapsed();
         let timeout = Duration::from_secs(state.config.timeout_seconds);
-        print!("Remaining time: {} seconds \r", timeout.as_secs() - elapsed.as_secs());
+        print!(
+            "Remaining time: {} seconds \r",
+            timeout.as_secs() - elapsed.as_secs()
+        );
         io::stdout().flush().unwrap(); // 刷新输出缓冲区
         if elapsed >= timeout {
             cleanup_directory(&state.config.directory);
@@ -24,25 +28,72 @@ pub async fn monitor_task(state: Arc<Mutex<AppState>>) {
 }
 
 /// Trigger alert if remaining time is less than warning_seconds
-pub async fn check_remain_time(state: Arc<Mutex<AppState>>) {
-    let check_interval = Duration::from_secs(60 * 30); // 每30分钟检查一次
-    println!("check remain time started...");
+pub async fn check_remain_time(state: Arc<Mutex<AppState>>, config: Config) {
+    info!("check remain time started...");
     loop {
-        tokio::time::sleep(check_interval).await;
+        tokio::time::sleep(Duration::from_secs(config.checking_interval)).await;
         let state = state.lock().await;
         let elapsed = state.last_active.elapsed();
-        let timeout = Duration::from_secs(state.config.timeout_seconds);
+        let timeout = Duration::from_secs(config.timeout_seconds);
         let remains_time = timeout - elapsed;
-        let warning_seconds = Duration::from_secs(state.config.warning_seconds); 
+        let warning_seconds = Duration::from_secs(config.warning_seconds);
         if remains_time < warning_seconds {
-            alert();
+            if let Err(e) = send_alert_request(&config, remains_time).await {
+                error!("Failed to send alert request: {}", e);
+            }
         }
     }
 }
 
-pub fn alert() {
-    // todo 
-    println!("Alert: Directory has not been accessed in 12 hours!");
+pub fn build_alert_body(alert_channel: &str, remains_time: Duration) -> String {
+    let remain_hours = remains_time.as_secs() / 3600;
+    let remain_minutes = (remains_time.as_secs() % 3600) / 60;
+    match alert_channel {
+        "ServerChan3" => format!(
+            "{{\
+              \"title\" : \"dir-vigil\",\
+            \"desp\" : \"Directory will be deleted after {} hours and {} minutes!\"\
+        }}",
+            remain_hours, remain_minutes
+        ),
+        "bark" => format!(
+            "{{\
+            \"title\" : \"dir-vigil\",\
+            \"body\": \"Directory will be deleted after {} hours and {} minutes!\"\
+        }}",
+            remain_hours, remain_minutes
+        ),
+        _ => format!("Directory will be deleted after {} hours and {} minutes!", remain_hours, remain_minutes),
+    }
+}
+
+pub async fn send_alert_request(
+    config: &Config,
+    remains_time: Duration,
+) -> Result<(), reqwest::Error> {
+    if config.alert_url.is_none() || config.alert_channel.is_none() {
+        return Ok(());
+    }
+
+    let alert_channel = config.alert_channel.as_ref().map(|s| s.as_str());
+
+    let body = build_alert_body(alert_channel.unwrap(), remains_time);
+
+    let client = reqwest::Client::new();
+    let response = client
+        .post(config.alert_url.as_ref().unwrap())
+        .body(body)
+        .header("Content-Type", "application/json; charset=utf-8")
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        error!("Alert request failed with status: {}", response.status());
+    } else {
+        debug!("Alert request success : {:?}", response);
+    }
+
+    Ok(())
 }
 
 pub fn print_qrcode(data: &str) {
@@ -62,9 +113,49 @@ pub fn cleanup_directory(dir: &str) {
 
     if path.exists() {
         if let Err(e) = std::fs::remove_dir_all(path) {
-            eprintln!("Failed to delete directory: {}", e);
+            error!("Failed to delete directory: {}", e);
         } else {
-            println!("Successfully deleted directory: {}", dir);
+            info!("Successfully deleted directory: {}", dir);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_send_alert_request_without_url() {
+        let config = Config {
+            alert_url: None,
+            ..Default::default()
+        };
+        assert!(send_alert_request(&config, Duration::from_secs(1)).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_send_alert_request_success_with_server_chan3() {
+        let config = Config {
+            alert_url: Some(String::from(
+                "<your_ServerChain3_url>",
+            )),
+            alert_channel: Some(String::from("ServerChan3")),
+            ..Default::default()
+        };
+
+        assert!(send_alert_request(&config, Duration::from_secs(1)).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_send_alert_request_success_bark() {
+        let config = Config {
+            alert_url: Some(String::from(
+                "<your_bark_url>",
+            )),
+            alert_channel: Some(String::from("bark")),
+            ..Default::default()
+        };
+
+        assert!(send_alert_request(&config, Duration::from_secs(1)).await.is_ok());
     }
 }

@@ -18,7 +18,7 @@ pub async fn keep_alive_handler(
 ) -> impl IntoResponse {
     let mut state = state.lock().await;
 
-    if let Some((_, code)) = params.iter().find(|(k, _)| k == "2fa_code") {
+    if let Some((_, code)) = params.iter().find(|(k, _)| k == "tow_fa_code") {
         let secret = file_store::decrypt_from_file(state.file_encypt_key, &state.serect_file_path)
             .expect("Failed to decrypt secret file");
         if totp::verify_totp_code(

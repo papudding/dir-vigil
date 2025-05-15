@@ -1,2 +1,4 @@
 /target
 *.enc
+.DS_Store
+user_secrets.txt

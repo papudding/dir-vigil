@@ -1,4 +1,5 @@
 use axum::{routing::get, Router};
+use tower_http::cors::{CorsLayer, Any};
 use log::info;
 use std::{sync::Arc, time::Instant};
 use tokio::sync::Mutex;
@@ -48,10 +49,17 @@ async fn main() {
     util::print_qrcode(&uri);
     info!("{}", uri);
 
+    let cors = CorsLayer::new()
+        .allow_methods([axum::http::Method::GET])
+        .allow_origin(Any)
+        .allow_headers([axum::http::header::CONTENT_TYPE]);
+
+
     let router = Router::new()
         .route("/keepalive", get(keep_alive_handler))
         .route("/status", get(status_handler))
-        .with_state(app_state.clone());
+        .with_state(app_state.clone())
+        .layer(cors);
 
     let addr = format!("0.0.0.0:{}", app_state.lock().await.config.port);
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();

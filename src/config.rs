@@ -31,9 +31,14 @@ pub struct Config {
     /// HTTP server port
     #[arg(short, long, default_value = "8080")]
     pub port: u16,
+
+    /// comment
+    #[arg(long)]
+    pub comment: Option<String>,
 }
 
 pub struct AppState {
+    pub captcha: Option<String>,
     pub last_active: Instant,
     pub config: Config,
     pub file_encypt_key: &'static [u8; 32],

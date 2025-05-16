@@ -63,7 +63,10 @@ pub fn build_alert_body(alert_channel: &str, remains_time: Duration) -> String {
         }}",
             remain_hours, remain_minutes
         ),
-        _ => format!("Directory will be deleted after {} hours and {} minutes!", remain_hours, remain_minutes),
+        _ => format!(
+            "Directory will be deleted after {} hours and {} minutes!",
+            remain_hours, remain_minutes
+        ),
     }
 }
 
@@ -130,32 +133,34 @@ mod tests {
             alert_url: None,
             ..Default::default()
         };
-        assert!(send_alert_request(&config, Duration::from_secs(1)).await.is_ok());
+        assert!(send_alert_request(&config, Duration::from_secs(1))
+            .await
+            .is_ok());
     }
 
     #[tokio::test]
     async fn test_send_alert_request_success_with_server_chan3() {
         let config = Config {
-            alert_url: Some(String::from(
-                "<your_ServerChain3_url>",
-            )),
+            alert_url: Some(String::from("<your_ServerChain3_url>")),
             alert_channel: Some(String::from("ServerChan3")),
             ..Default::default()
         };
 
-        assert!(send_alert_request(&config, Duration::from_secs(1)).await.is_ok());
+        assert!(send_alert_request(&config, Duration::from_secs(1))
+            .await
+            .is_ok());
     }
 
     #[tokio::test]
     async fn test_send_alert_request_success_bark() {
         let config = Config {
-            alert_url: Some(String::from(
-                "<your_bark_url>",
-            )),
+            alert_url: Some(String::from("<your_bark_url>")),
             alert_channel: Some(String::from("bark")),
             ..Default::default()
         };
 
-        assert!(send_alert_request(&config, Duration::from_secs(1)).await.is_ok());
+        assert!(send_alert_request(&config, Duration::from_secs(1))
+            .await
+            .is_ok());
     }
 }

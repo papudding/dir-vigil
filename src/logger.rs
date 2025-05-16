@@ -1,5 +1,5 @@
-use env_logger::Builder;
 use chrono::Local;
+use env_logger::Builder;
 use std::io::Write;
 /// 初始化logger
 /// 初始化日志系统

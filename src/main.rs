@@ -1,19 +1,19 @@
 use axum::{routing::get, Router};
-use tower_http::cors::{CorsLayer, Any};
 use log::info;
 use std::{sync::Arc, time::Instant};
 use tokio::sync::Mutex;
+use tower_http::cors::{Any, CorsLayer};
 mod config;
 mod file_store;
 mod handler;
+mod logger;
 mod totp;
 mod util;
-mod logger;
 use clap::Parser;
 use config::{AppState, Config};
-use handler::{keep_alive_handler, status_handler};
-use util::{check_remain_time, monitor_task};
+use handler::{generate_captcha_handler, keep_alive_handler, status_handler};
 use logger::init_logger;
+use util::{check_remain_time, monitor_task};
 
 pub const SECRET_FILE_NAME: &str = "user_secret.enc";
 pub const SECRET_FILE_KEY: &[u8; 32] = b"0123456789abcdef0123456789abcdef";
@@ -29,6 +29,7 @@ async fn main() {
     }
 
     let app_state = Arc::new(Mutex::new(AppState {
+        captcha: None,
         last_active: Instant::now(),
         config: config.clone(),
         file_encypt_key: SECRET_FILE_KEY,
@@ -54,10 +55,10 @@ async fn main() {
         .allow_origin(Any)
         .allow_headers([axum::http::header::CONTENT_TYPE]);
 
-
     let router = Router::new()
         .route("/keepalive", get(keep_alive_handler))
         .route("/status", get(status_handler))
+        .route("/captcha", get(generate_captcha_handler))
         .with_state(app_state.clone())
         .layer(cors);
 
@@ -65,10 +66,7 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
 
     tokio::spawn(monitor_task(app_state.clone()));
-    tokio::spawn(check_remain_time(
-        app_state.clone(),
-        config.clone(),
-    ));
+    tokio::spawn(check_remain_time(app_state.clone(), config.clone()));
 
     info!("Server running on {}", addr);
     axum::serve(listener, router).await.unwrap();

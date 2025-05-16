@@ -70,6 +70,4 @@ async fn main() {
 
     info!("Server running on {}", addr);
     axum::serve(listener, router).await.unwrap();
-
-    // todo Axum返回优化
 }

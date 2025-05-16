@@ -1,4 +1,18 @@
-/target
+target
 *.enc
+
+# Local
 .DS_Store
-user_secrets.txt
+*.local
+*.log*
+
+# Dist
+node_modules
+dist/
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea
+.yarnrc
+.tool-versions

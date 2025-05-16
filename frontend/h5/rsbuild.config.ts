@@ -9,7 +9,7 @@ export default defineConfig({
   plugins: [pluginVue()],
   source: {
     define: {
-      'process.env.API_BASE_URL': JSON.stringify(process.env.API_BASE_URL)
+      'process.env.API_BASE_URL': JSON.stringify(process.env.NODE_ENV === 'production' ? process.env.API_BASE_URL_PROD : process.env.API_BASE_URL_DEV)
     }
   }
 });

@@ -1,6 +1,3 @@
-target
-*.enc
-
 # Local
 .DS_Store
 *.local

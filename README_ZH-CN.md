@@ -32,18 +32,59 @@
 - 定期检查软件运行状态，确保重置机制正常工作
 
 **继续使用即表示您已充分了解并接受相关风险。**
-
-## 3. 安装
-获取源码后构建：
+## 3. docker安装
+从relaese获取镜像打包文件（注意环境），导入docker
 ```bash
+docker load -i dir-vigil-linuxamd64.tar
+```
+运行镜像
+```bash
+docker run -d -p <your_pot>:80 --name dir-vigil -v <your_dir>:/vigilDir dir-vigil:0.1.0
+```
+## 4. 裸机安装
+获取源码:
+```bash
+git clone https://github.com/papudding/dir-vigil.git
+```
+### 前端
+```bash
+cd frontend/h5
+yarn install
+yarn build
+```
+> 省略nginx安装
+
+将前端编译后生产的`frontend/h5/dist`目录下的文件复制到nginx的`html`目录下
+参考`nginx/nginx.conf`配置nginx的config
+
+### 后端
+> 省略rust环境安装
+
+```bash
+cd backend
 cargo build --release
 ```
+产生的可执行文件在`backend/target/release`目录下
 
-## 4. Usage
+启动：
 ```bash
 ./dir-vigil -d <the dir path that you wanna vigilance>
 ```
-查看帮助：
+
+## 5. 提醒配置
+### docker
+支持bark和server酱两种提醒方式
 ```bash
-./dir-vigil -h
+docker run -d -p <your_pot>:80 --name dir-vigil \
+-v <your_dir>:/vigilDir \
+-e ALERT_URL=<your_request_url> \
+-e ALERT_CHANNEL=bark \
+dir-vigil:0.1.0
 ```
+server酱：`-e ALERT_CHANNEL=ServerChan3`
+
+### 裸机
+todo  
+
+## 6. 其他可配置项
+todo  

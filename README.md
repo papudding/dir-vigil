@@ -34,17 +34,79 @@ The functions provided by this software (dir-vigil) involve **automatic deletion
 
 **By continuing to use, you are fully aware of and accept the risks involved.**
 
-## 3. Installation
-Get the source code then build:
+## 3.docker installation
+Obtain the image packaging file from relaese (note the host environment) and import it to Docker
 ```bash
-cargo build --release
+docker load -i dir-vigil-linuxamd64.tar
+```
+Run the image
+```bash
+docker run -d -p <your_pot>:80 --name dir-vigil -v <your_dir>:/vigilDir dir-vigil:0.1.0
 ```
 
-## 4. Usage
+## 4. Bare metal installation
+Get the source code:
+```bash
+git clone https://github.com/papudding/dir-vigil.git
+```
+### Front-end
+```bash
+cd frontend/h5
+yarn install
+yarn build
+```
+> Omit the nginx installation
+
+Copy the files in the `frontend/h5/dist` directory produced by the frontend compilation to the `html` directory of nginx
+Configure the config of nginx by referring to `nginx/nginx.conf`
+
+### Backend
+> Omit rust installation
+
+```bash
+cd backend
+cargo build --release
+```
+The resulting executable file is located in the 'backend/target/release' directory
+
+Startup:
 ```bash
 ./dir-vigil -d <the dir path that you wanna vigilance>
 ```
-for help:
+
+## 5. Usage:
+1. Start the docker container or bare metal program backend
+2. QR code printed using a 2FA authenticator terminal (Microsoft Authenticator recommended)
+// pic
+3. Visit the front-end page regularly to reset the operation
+
+## 6. Reminder configuration
+### docker
+Supports two reminder methods: bark and server sauce
 ```bash
-./dir-vigil -h
+docker run -d -p <your_pot>:80 --name dir-vigil \
+-v <your_dir>:/vigilDir \
+-e ALERT_URL=<your_request_url> \
+-e ALERT_CHANNEL=bark \
+dir-vigil:0.1.0
 ```
+server-chan: '-e ALERT_CHANNEL=ServerChan3'
+
+### Bare metal
+```bash
+./dir-vigil --directory <the dir path that you wanna vigilance> \
+--alert-url <your_request_url> \
+--alert-channel <bark or ServerChan3>
+```
+
+## 7. Other configurable items on the backend
+| params | Type | Default value | Description |
+| --- | --- | --- | --- |
+| --directory | string | - | The directory path to be tracked for deletion |
+| --timeout-seconds | int | 86400 | Timeout (seconds) before deletion (default: 24 hours).
+| --warning-seconds | int | 21600 | The time (seconds) when the reminder starts before deletion (default: 12 hours) |
+| --checking-interval | int | 1200 | Check and alert interval (seconds) for warning_seconds (default: 20 minutes).
+| --alert-url | string | - | Reminder request address |
+| --alert-channel | string | - | Reminder channel (bark or ServerChan3) |
+| --port | int | 8080 | Service port |
+| --help | bool | false | Show help |

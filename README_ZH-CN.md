@@ -32,8 +32,9 @@
 - 定期检查软件运行状态，确保重置机制正常工作
 
 **继续使用即表示您已充分了解并接受相关风险。**
-## 3. docker安装
-从relaese获取镜像打包文件（注意环境），导入docker
+
+## 3.docker安装
+从relaese获取镜像打包文件（注意宿主机环境），导入docker
 ```bash
 docker load -i dir-vigil-linuxamd64.tar
 ```
@@ -70,8 +71,13 @@ cargo build --release
 ```bash
 ./dir-vigil -d <the dir path that you wanna vigilance>
 ```
+## 5. 使用方法
+1. 启动docker容器或裸机程序后端
+2. 使用2FA验证器终端打印的二维码（推荐Microsoft Authenticator）
+// pic
+3. 定期访问前端页面进行重置操作
 
-## 5. 提醒配置
+## 6. 提醒配置
 ### docker
 支持bark和server酱两种提醒方式
 ```bash
@@ -84,7 +90,20 @@ dir-vigil:0.1.0
 server酱：`-e ALERT_CHANNEL=ServerChan3`
 
 ### 裸机
-todo  
+```bash
+./dir-vigil --directory <the dir path that you wanna vigilance> \
+--alert-url <your_request_url> \
+--alert-channel <bark or ServerChan3>
+```
 
-## 6. 其他可配置项
-todo  
+## 7. 后端其他可配置项
+| 配置项 | 类型 | 默认值 | 描述 |
+| --- | --- | --- | --- |
+| --directory | string | - | 要跟踪以供删除的目录路径 |
+| --timeout-seconds | int | 86400 | 删除前超时 (秒)(默认：24小时) |
+| --warning-seconds | int | 21600 | 删除前开始提醒的时间 (秒)(默认：12小时) |
+| --checking-interval | int | 1200 | warning_seconds 的检查和警报间隔 (秒)(默认：20分钟) |
+| --alert-url | string | - | 提醒请求地址 |
+| --alert-channel | string | - | 提醒渠道（bark 或 ServerChan3） |
+| --port | int | 8080 | 服务端口 |
+| --help | bool | false | 显示帮助信息 |

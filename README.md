@@ -5,6 +5,9 @@ dir-vigil is a time-triggered automatic folder cleanup tool, with its core mecha
 
 > To be blunt, it's about helping you destroy data after you 💀.
 
+<img width="250" alt="phone1" src="https://github.com/user-attachments/assets/3fdd8fc7-5336-4730-ab5c-22fddab106e6" />
+<img width="255" alt="phone3" src="https://github.com/user-attachments/assets/51ad0e68-2d54-4bbd-91d0-26981cd86ae1" />
+
 ## 1. core process
 The tool works through the following process:
 
@@ -76,11 +79,14 @@ Startup:
 
 ## 5. Usage:
 1. Start the docker container or bare metal program backend
-2. QR code printed using a 2FA authenticator terminal (Microsoft Authenticator recommended)
-// pic
+2. Use the 2FA validator to scan the QR code printed by the terminal to obtain the 2FA code (Microsoft Authenticator recommended)
+<img width="450" alt="cmd1" src="https://github.com/user-attachments/assets/e07f7b0d-f54d-4030-b0b8-b8f22430da33" />
+
 3. Visit the front-end page regularly to reset the operation
 
 ## 6. Reminder configuration
+<img width="220" alt="phone2" src="https://github.com/user-attachments/assets/56d63664-5f83-4a83-a0be-5e14eb6a4bfe" />
+
 ### docker
 Supports two reminder methods: bark and server sauce
 ```bash

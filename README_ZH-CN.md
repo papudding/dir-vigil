@@ -4,6 +4,9 @@
 是一款基于时间触发的文件夹自动删除工具，其核心机制类似于“[失能开关](https://baike.baidu.com/item/%E5%A4%B1%E8%83%BD%E5%BC%80%E5%85%B3/22694753)”。
 > 直白一点，就是你💀了之后帮你销毁数据的。
 
+<img width="250" alt="phone1" src="https://github.com/user-attachments/assets/3fdd8fc7-5336-4730-ab5c-22fddab106e6" />
+<img width="255" alt="phone3" src="https://github.com/user-attachments/assets/51ad0e68-2d54-4bbd-91d0-26981cd86ae1" />
+
 ## 1. 核心流程
 该工具通过以下流程工作：
 
@@ -73,11 +76,14 @@ cargo build --release
 ```
 ## 5. 使用方法
 1. 启动docker容器或裸机程序后端
-2. 使用2FA验证器终端打印的二维码（推荐Microsoft Authenticator）
-// pic
+2. 使用2FA验证器扫描终端打印的二维码获取2FA代码（推荐Microsoft Authenticator）
+<img width="450" alt="cmd1" src="https://github.com/user-attachments/assets/e07f7b0d-f54d-4030-b0b8-b8f22430da33" />
+
 3. 定期访问前端页面进行重置操作
 
 ## 6. 提醒配置
+<img width="220" alt="phone2" src="https://github.com/user-attachments/assets/56d63664-5f83-4a83-a0be-5e14eb6a4bfe" />
+
 ### docker
 支持bark和server酱两种提醒方式
 ```bash

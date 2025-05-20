@@ -4,7 +4,7 @@ use std::time::Instant;
 #[derive(Parser, Debug, Default, Clone)]
 #[command(version, about)]
 pub struct Config {
-    /// Directory to monitor for deletion
+    /// Directory to track for deletion
     #[arg(short, long)]
     pub directory: String,
 

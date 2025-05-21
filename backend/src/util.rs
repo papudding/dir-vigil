@@ -1,5 +1,5 @@
 use crate::config::{AppState, Config};
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use qrcode::QrCode;
 use std::io::{self, Write};
 use std::{path::Path, sync::Arc, time::Duration};
@@ -37,7 +37,13 @@ pub async fn check_remain_time(state: Arc<Mutex<AppState>>, config: Config) {
         let timeout = Duration::from_secs(config.timeout_seconds);
         let remains_time = timeout - elapsed;
         let warning_seconds = Duration::from_secs(config.warning_seconds);
+        info!(
+            "Remaining time: {} seconds, warning threshold: {} seconds",
+            remains_time.as_secs(),
+            warning_seconds.as_secs()
+        );
         if remains_time < warning_seconds {
+            info!("Warning! Remaining time: {} is below warning_seconds: {}", remains_time.as_secs(), config.warning_seconds);
             if let Err(e) = send_alert_request(&config, remains_time).await {
                 error!("Failed to send alert request: {}", e);
             }
@@ -75,16 +81,22 @@ pub async fn send_alert_request(
     remains_time: Duration,
 ) -> Result<(), reqwest::Error> {
     if config.alert_url.is_none() || config.alert_channel.is_none() {
+        warn!("No alert URL or channel configured, skipping alert request");
         return Ok(());
     }
 
     let alert_channel = config.alert_channel.as_ref().map(|s| s.as_str());
+    let alert_url = config.alert_url.as_ref().unwrap();
 
+    info!(
+        "Sending alert request to {} via {}",
+        alert_url, alert_channel.unwrap()
+    );
     let body = build_alert_body(alert_channel.unwrap(), remains_time);
 
     let client = reqwest::Client::new();
     let response = client
-        .post(config.alert_url.as_ref().unwrap())
+        .post(alert_url)
         .body(body)
         .header("Content-Type", "application/json; charset=utf-8")
         .send()

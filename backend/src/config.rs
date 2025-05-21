@@ -1,5 +1,6 @@
 use clap::Parser;
 use std::time::Instant;
+use std::fmt;
 
 #[derive(Parser, Debug, Default, Clone)]
 #[command(version, about)]
@@ -35,6 +36,23 @@ pub struct Config {
     /// comment
     #[arg(long)]
     pub comment: Option<String>,
+}
+
+impl fmt::Display for Config {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "Directory: {}", self.directory)?;
+        writeln!(f, "Port: {}", self.port)?;
+        writeln!(f, "Timeout seconds: {}", self.timeout_seconds)?;
+        writeln!(f, "Warning seconds: {}", self.warning_seconds)?;
+        writeln!(f, "Checking interval: {}", self.checking_interval)?;
+        if let Some(url) = &self.alert_url {
+            writeln!(f, "Alert URL: {}", url)?;
+        }
+        if let Some(channel) = &self.alert_channel {
+            writeln!(f, "Alert channel: {}", channel)?;
+        }
+        Ok(())
+    }
 }
 
 pub struct AppState {

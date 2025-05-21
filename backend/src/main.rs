@@ -24,6 +24,7 @@ async fn main() {
     init_logger();
 
     let config = Config::parse();
+    info!("Starting with configuration: {:?}", config);
     if !std::path::Path::new(&config.directory).exists() {
         panic!("Directory does not exist: {}", config.directory);
     }

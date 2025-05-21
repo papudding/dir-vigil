@@ -8,5 +8,7 @@ CMD="/usr/local/bin/dir-vigil -d /vigilDir"
 [ -n "$ALERT_CHANNEL" ] && CMD=$CMD" --alert-channel $ALERT_CHANNEL"
 [ -n "$COMMENT" ] && CMD=$CMD" --comment $COMMENT"
 
+CMD=$CMD" > dir-vigil.log 2>&1"
+
 echo "$CMD"
 eval "$CMD"

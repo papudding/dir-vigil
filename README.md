@@ -32,14 +32,15 @@ The web UI is responsive and works on both desktop and mobile. The countdown is 
 ## 3. Quick start (Docker, recommended)
 
 ```bash
-# pull the prebuilt image
-docker pull ghcr.io/papudding/dir-vigil:0.2.0
-
-# or build it from source (no prebuilt artifacts required)
+# build from source (no prebuilt artifacts required)
 git clone https://github.com/papudding/dir-vigil.git
 cd dir-vigil
 docker build -t dir-vigil:0.2.0 .
 ```
+
+> Prebuilt GHCR images are produced only by the release workflow
+> (`.github/workflows/release.yml`) after a `v*` tag is pushed. No image exists
+> until that workflow has completed; GHCR may also require `docker login ghcr.io`.
 
 Run it with a dedicated protected directory and a persisted runtime directory:
 

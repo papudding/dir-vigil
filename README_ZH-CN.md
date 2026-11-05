@@ -32,14 +32,15 @@ dir-vigil 是一款基于时间触发的文件夹自动删除工具，核心机�
 ## 3. 快速开始（Docker，推荐）
 
 ```bash
-# 使用预构建镜像
-docker pull ghcr.io/papudding/dir-vigil:0.2.0
-
-# 或从源码构建（不再依赖仓库里的预编译产物）
+# 从源码构建（不再依赖仓库里的预编译产物）
 git clone https://github.com/papudding/dir-vigil.git
 cd dir-vigil
 docker build -t dir-vigil:0.2.0 .
 ```
+
+> 预构建 GHCR 镜像由 Release workflow（`.github/workflows/release.yml`）在推送
+> `v*` tag 后发布；workflow 完成前不存在可拉取的镜像，GHCR 也可能需要先
+> `docker login ghcr.io`。
 
 运行时把受保护目录和运行目录分别挂载进去：
 

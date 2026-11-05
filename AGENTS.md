@@ -24,7 +24,7 @@ dir-vigil 是"失能开关"式定时清理工具：
 ## 2. 目录结构
 
 ```text
-.github/                    CI（fmt/clippy/test/frontend/docker）与 release（GHCR 多架构镜像）
+.github/                    CI（fmt/clippy/test/frontend/docker）与 release（仅 GitHub release notes）
 backend/                   Rust 后端（单 bin，模块在 main.rs 声明）
   src/main.rs              入口：CLI、密钥加载、secret 初始化、路由、CORS、后台任务
   src/config.rs            clap Config、AppState、DIR_VIGIL_SECRET_KEY 解析
@@ -132,7 +132,7 @@ docker run -d --name dir-vigil \
 - `/vigilDir` 是会被删除的数据目录；`/app` 持久化 `user_secret.enc`，日志写入 `/app/logs`（不挂载则容器重建后需重新绑定 2FA）。
 - 首次绑定：`docker exec -it dir-vigil dir-vigil --print-secret-uri`（输出即 2FA secret，勿记录/分享）。
 - 容器环境变量映射：`DIR_VIGIL_SECRET_KEY`（必需）、`TIMEOUT_SECONDS`、`WARNING_SECONDS`、`CHECKING_INTERVAL`、`ALERT_URL`、`ALERT_CHANNEL`、`COMMENT`、`BIND_HOST`。
-- 发布流程：tag `v*` 触发 `.github/workflows/release.yml`，构建 `linux/amd64` + `linux/arm64` 镜像并推 GHCR；Release 页面只生成 notes，不上传二进制产物。
+- 发布流程：tag `v*` 触发 `.github/workflows/release.yml`，只生成 GitHub release notes；不发布镜像、不上传二进制产物。
 - 本地构建新镜像时若 Docker Hub 不可达，可先用镜像站拉取 `rust:1.95-alpine` / `nginx:1.31-alpine` / `node:22-alpine` 并 retag 成 Dockerfile 中的官方 tag。
 
 ## 4. HTTP API 契约（前后端共用，改动需同步）

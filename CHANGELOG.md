@@ -15,7 +15,7 @@
 - nginx: rate limiting, request-size limit, security headers, gzip, static
   asset caching, safe access-log format, and `server_tokens off`.
 - GitHub Actions CI (format, clippy, tests, frontend build, Docker build) and
-  a release workflow publishing a multi-arch image to GHCR.
+  a release workflow generating GitHub release notes (no images or binary artifacts).
 - SECURITY.md, CONTRIBUTING.md, CHANGELOG.md, Dependabot configuration.
 - Package metadata (`description`, `license`, `repository`, Node engine).
 

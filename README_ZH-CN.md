@@ -38,9 +38,6 @@ cd dir-vigil
 docker build -t dir-vigil:0.2.0 .
 ```
 
-> 预构建 GHCR 镜像由 Release workflow（`.github/workflows/release.yml`）在推送
-> `v*` tag 后发布；workflow 完成前不存在可拉取的镜像，GHCR 也可能需要先
-> `docker login ghcr.io`。
 
 运行时把受保护目录和运行目录分别挂载进去：
 

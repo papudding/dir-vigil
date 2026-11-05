@@ -38,9 +38,6 @@ cd dir-vigil
 docker build -t dir-vigil:0.2.0 .
 ```
 
-> Prebuilt GHCR images are produced only by the release workflow
-> (`.github/workflows/release.yml`) after a `v*` tag is pushed. No image exists
-> until that workflow has completed; GHCR may also require `docker login ghcr.io`.
 
 Run it with a dedicated protected directory and a persisted runtime directory:
 

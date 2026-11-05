@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---------- frontend ----------
-FROM node:22-alpine AS frontend
+FROM node:26-alpine AS frontend
 ARG HTTP_PROXY
 ARG HTTPS_PROXY
 ARG http_proxy

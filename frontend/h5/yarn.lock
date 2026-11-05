@@ -117,12 +117,12 @@
     core-js "~3.47.0"
     jiti "^2.6.1"
 
-"@rsbuild/plugin-vue@^1.0.7":
-  version "1.2.9"
-  resolved "https://registry.yarnpkg.com/@rsbuild/plugin-vue/-/plugin-vue-1.2.9.tgz#fd35c14efa8e5c2a55485575ea9decfac4ef4cab"
-  integrity sha512-ufD4eufkZZlNK3iY5NWg57AMK9qrTFmHycDkSTfRTua4Qczf7q9s7rCLYVfVv2w36cOXJIewM+376jD0zaQShQ==
+"@rsbuild/plugin-vue@^2.0.1":
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/@rsbuild/plugin-vue/-/plugin-vue-2.0.1.tgz#c8a78f21712bd378e81c53ef394d450725bdacc9"
+  integrity sha512-JbQ/e4J7lICXC6JpovJS9PHlIT0Vl1XngTni3HuVkXF82Q18k8nd0RmRDVRDFcb/mvqij5ITwZsez9h3DoYcQQ==
   dependencies:
-    rspack-vue-loader "^17.5.0"
+    rspack-vue-loader "^17.5.1"
 
 "@rspack/binding-darwin-arm64@1.7.12":
   version "1.7.12"
@@ -586,7 +586,7 @@ proxy-from-env@^2.1.0:
   resolved "https://registry.yarnpkg.com/proxy-from-env/-/proxy-from-env-2.1.0.tgz#a7487568adad577cfaaa7e88c49cab3ab3081aba"
   integrity sha512-cJ+oHTW1VAEa8cJslgmUZrc+sjRKgAKl3Zyse6+PV38hZe/V6Z14TbCuXcan9F9ghlz4QrFr2c92TNF82UkYHA==
 
-rspack-vue-loader@^17.5.0:
+rspack-vue-loader@^17.5.1:
   version "17.7.2"
   resolved "https://registry.yarnpkg.com/rspack-vue-loader/-/rspack-vue-loader-17.7.2.tgz#a87c0b53ffb6fff55dd2b7e5dd8829c438181aad"
   integrity sha512-i6W3epmp98tibZ2rycV6YP4FhSJvvui9JnJm7SicSC1fXzkPBGSS1g9BNZLGUqVGM6opWEq/Aw2uzD3Q0pnQOg==

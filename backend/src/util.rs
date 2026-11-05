@@ -17,11 +17,13 @@ pub async fn monitor_task(state: Arc<Mutex<AppState>>) {
         let timeout = Duration::from_secs(state.config.timeout_seconds);
         print!(
             "Remaining time: {} seconds \r",
-            timeout.as_secs() - elapsed.as_secs()
+            timeout.saturating_sub(elapsed).as_secs()
         );
         io::stdout().flush().unwrap(); // 刷新输出缓冲区
         if elapsed >= timeout {
-            cleanup_directory(&state.config.directory);
+            let directory = state.config.directory.clone().unwrap_or_default();
+            drop(state);
+            cleanup_directory(&directory);
             std::process::exit(0);
         }
     }
@@ -35,7 +37,7 @@ pub async fn check_remain_time(state: Arc<Mutex<AppState>>, config: Config) {
         let state = state.lock().await;
         let elapsed = state.last_active.elapsed();
         let timeout = Duration::from_secs(config.timeout_seconds);
-        let remains_time = timeout - elapsed;
+        let remains_time = timeout.saturating_sub(elapsed);
         let warning_seconds = Duration::from_secs(config.warning_seconds);
         info!(
             "Remaining time: {} seconds, warning threshold: {} seconds",
@@ -43,7 +45,11 @@ pub async fn check_remain_time(state: Arc<Mutex<AppState>>, config: Config) {
             warning_seconds.as_secs()
         );
         if remains_time < warning_seconds {
-            info!("Warning! Remaining time: {} is below warning_seconds: {}", remains_time.as_secs(), config.warning_seconds);
+            info!(
+                "Warning! Remaining time: {} is below warning_seconds: {}",
+                remains_time.as_secs(),
+                config.warning_seconds
+            );
             if let Err(e) = send_alert_request(&config, remains_time).await {
                 error!("Failed to send alert request: {}", e);
             }
@@ -80,19 +86,16 @@ pub async fn send_alert_request(
     config: &Config,
     remains_time: Duration,
 ) -> Result<(), reqwest::Error> {
-    if config.alert_url.is_none() || config.alert_channel.is_none() {
+    let (Some(alert_channel), Some(alert_url)) =
+        (config.alert_channel.as_deref(), config.alert_url.as_deref())
+    else {
         warn!("No alert URL or channel configured, skipping alert request");
         return Ok(());
-    }
+    };
 
-    let alert_channel = config.alert_channel.as_ref().map(|s| s.as_str());
-    let alert_url = config.alert_url.as_ref().unwrap();
-
-    info!(
-        "Sending alert request to {} via {}",
-        alert_url, alert_channel.unwrap()
-    );
-    let body = build_alert_body(alert_channel.unwrap(), remains_time);
+    // Never log the alert URL: it often contains a private token.
+    info!("Sending alert request via {alert_channel}");
+    let body = build_alert_body(alert_channel, remains_time);
 
     let client = reqwest::Client::new();
     let response = client
@@ -105,7 +108,7 @@ pub async fn send_alert_request(
     if !response.status().is_success() {
         error!("Alert request failed with status: {}", response.status());
     } else {
-        debug!("Alert request success : {:?}", response);
+        debug!("Alert request completed with status: {}", response.status());
     }
 
     Ok(())
@@ -150,29 +153,34 @@ mod tests {
             .is_ok());
     }
 
-    #[tokio::test]
-    async fn test_send_alert_request_success_with_server_chan3() {
-        let config = Config {
-            alert_url: Some(String::from("<your_ServerChain3_url>")),
-            alert_channel: Some(String::from("ServerChan3")),
-            ..Default::default()
-        };
-
-        assert!(send_alert_request(&config, Duration::from_secs(1))
-            .await
-            .is_ok());
+    #[test]
+    fn test_build_alert_body_server_chan3() {
+        let body = build_alert_body("ServerChan3", Duration::from_secs(3_660));
+        let json: serde_json::Value = serde_json::from_str(&body).expect("valid json");
+        assert_eq!(json["title"], "dir-vigil");
+        assert_eq!(
+            json["desp"],
+            "Directory will be deleted after 1 hours and 1 minutes!"
+        );
     }
 
-    #[tokio::test]
-    async fn test_send_alert_request_success_bark() {
-        let config = Config {
-            alert_url: Some(String::from("<your_bark_url>")),
-            alert_channel: Some(String::from("bark")),
-            ..Default::default()
-        };
+    #[test]
+    fn test_build_alert_body_bark() {
+        let body = build_alert_body("bark", Duration::from_secs(7_200));
+        let json: serde_json::Value = serde_json::from_str(&body).expect("valid json");
+        assert_eq!(json["title"], "dir-vigil");
+        assert_eq!(
+            json["body"],
+            "Directory will be deleted after 2 hours and 0 minutes!"
+        );
+    }
 
-        assert!(send_alert_request(&config, Duration::from_secs(1))
-            .await
-            .is_ok());
+    #[test]
+    fn test_build_alert_body_unknown_channel() {
+        let body = build_alert_body("unknown", Duration::from_secs(60));
+        assert_eq!(
+            body,
+            "Directory will be deleted after 0 hours and 1 minutes!"
+        );
     }
 }

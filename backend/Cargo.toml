@@ -1,7 +1,10 @@
 [package]
 name = "dir-vigil"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
+description = "Time-triggered directory cleanup tool with TOTP keepalive (dead man's switch)"
+license = "MIT"
+repository = "https://github.com/papudding/dir-vigil"
 
 [dependencies]
 axum = "0.7"
@@ -18,3 +21,5 @@ log = "0.4"
 env_logger = "0.11"
 chrono = "0.4"
 tower-http = { version = "0.6", features = ["cors"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

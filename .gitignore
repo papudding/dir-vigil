@@ -4,6 +4,8 @@ target
 # Local
 .DS_Store
 *.local
+.env
+.env.local
 *.log*
 
 # Dist

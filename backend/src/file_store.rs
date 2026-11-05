@@ -4,6 +4,23 @@ use aes_gcm::{
 };
 use std::fs::File;
 use std::io::{Read, Write};
+
+/// Ensure the encrypted secret file is only readable by its owner on Unix.
+fn restrict_permissions(file: &File) -> std::io::Result<()> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut permissions = file.metadata()?.permissions();
+        permissions.set_mode(0o600);
+        file.set_permissions(permissions)?;
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = file;
+    }
+    Ok(())
+}
+
 /// 加密数据并将其保存到指定路径
 ///
 /// # 参数
@@ -31,6 +48,7 @@ pub fn encrypt_and_save(
     match cipher.encrypt(&nonce, data) {
         Ok(ciphertext) => {
             let mut file = File::create(path)?;
+            restrict_permissions(&file)?;
             file.write_all(nonce.as_slice())?;
             file.write_all(ciphertext.as_slice())?;
             Ok(())
@@ -60,6 +78,10 @@ pub fn decrypt_from_file(
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer)?;
 
+    if buffer.len() < 12 {
+        return Err("Invalid secret file: too short".into());
+    }
+
     let (nonce, ciphertext) = buffer.split_at(12);
     let key = Key::<Aes256Gcm>::from_slice(key);
     let cipher = Aes256Gcm::new(key);
@@ -85,6 +107,28 @@ mod tests {
         let decrypted = decrypt_from_file(key, path).unwrap();
 
         assert_eq!(data.to_vec(), decrypted);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_encrypt_decrypt_permissions() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let key = b"0123456789abcdef0123456789abcdef";
+        let temp_dir = tempfile::tempdir().unwrap();
+        let path = temp_dir.path().join("secret.enc");
+        encrypt_and_save(b"test data", key, path.to_str().unwrap()).unwrap();
+
+        let mode = std::fs::metadata(&path).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode, 0o600);
+    }
+
+    #[test]
+    fn test_decrypt_too_short_file() {
+        let mut temp_file = NamedTempFile::new().unwrap();
+        temp_file.write_all(b"short").unwrap();
+        let key = b"0123456789abcdef0123456789abcdef";
+        assert!(decrypt_from_file(key, temp_file.path().to_str().unwrap()).is_err());
     }
 
     #[test]

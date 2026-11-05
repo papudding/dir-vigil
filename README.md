@@ -1,118 +1,197 @@
 # dir-vigil
-English | [中文说明](./README_ZH-CN.md) 
 
-dir-vigil is a time-triggered automatic folder cleanup tool, with its core mechanism similar to a "dead man's switch". 
+English | [中文说明](./README_ZH-CN.md)
 
-> To be blunt, it's about helping you destroy data after you 💀.
+dir-vigil is a time-triggered folder cleanup tool built around a "dead man's switch": while you keep checking in, the watched directory is left alone; if the countdown expires without a successful keep-alive, the directory is recursively deleted and the process exits.
 
-<img width="250" alt="phone1" src="https://github.com/user-attachments/assets/3fdd8fc7-5336-4730-ab5c-22fddab106e6" />
-<img width="255" alt="phone3" src="https://github.com/user-attachments/assets/51ad0e68-2d54-4bbd-91d0-26981cd86ae1" />
+> To be blunt: it destroys data after you stop checking in.
 
-## 1. core process
-The tool works through the following process:
+![Mobile UI](docs/screenshots/mobile.png)
+![Desktop UI](docs/screenshots/desktop.png)
 
-### 1.1 Initial configuration:
-- User Specified Monitoring Directory Path
-- Set File Retention Period (Expiration Time Limit)
+> **Data-loss warning:** this software deletes files by design. Use it only on directories you are prepared to lose, and make sure important data is backed up. The authors are not responsible for any data loss.
 
-### 1.2 Operating mechanism:
-- The system continuously monitors the preset expiration time limit
-- If the time limit is reached and no reset signal is received, the destination folder will be emptied automatically
-- Users need to actively trigger a reset operation before the time limit expires to continue the protection period
+## 1. How it works
 
-### 1.3 Requirements for use:
-To ensure the continued existence of the protected folder, the user must perform the reset operation periodically (the recommended interval is less than the set expiration time limit). This design not only ensures the automatic cleaning of temporary files, but also provides a controllable protection mechanism for files that need to be retained for a long time.
+1. Configure a directory to watch and a timeout.
+2. Every successful keep-alive (captcha + TOTP 2FA) resets the countdown.
+3. If the timeout is reached without a keep-alive, the watched directory is removed recursively and the process exits.
+4. Before expiry, reminders can be sent through [Bark](https://github.com/Finb/Bark) or Server Chan (`ServerChan3`).
 
-## 2. Disclaimer⚠️
-### 2.1 Data security tips:
-The functions provided by this software (dir-vigil) involve **automatic deletion of files**, please operate with caution. The software developer is **NOT responsible for any data loss resulting from the use of this tool**, including but not limited:
+The web UI is responsive and works on both desktop and mobile. The countdown is calibrated against the server and adapts its warning/critical states automatically.
 
-- File deletion due to misoperation, misconfiguration, or failure to reset the expiration time in time
-- Data loss caused by system abnormality, permission problem or other uncontrollable factors
-### 2.2 Recommendations for use:
+## 2. Features
 
-- **Make sure important data is backed up** before using on critical folder
-- Set the expiration time reasonably to avoid automatic cleaning of files due to negligence
-- Regularly check the operating status of the software to ensure that the reset mechanism is working properly
+- Dead-man's-switch-style timed deletion with a live countdown.
+- TOTP 2FA (30-second codes) plus a one-time captcha that is invalidated after a failed 2FA attempt.
+- Responsive H5 UI (mobile-first, desktop two-column layout).
+- Optional Bark / Server Chan reminders.
+- Docker image or bare-metal deployment.
+- TOTP secret encrypted at rest with a key supplied via environment variable.
 
-**By continuing to use, you are fully aware of and accept the risks involved.**
+## 3. Quick start (Docker, recommended)
 
-## 3.docker installation
-Obtain the image packaging file from relaese (note the host environment) and import it to Docker
 ```bash
-docker load -i dir-vigil-linuxamd64.tar
-```
-Run the image
-```bash
-docker run -d -p <your_pot>:80 --name dir-vigil -v <your_dir>:/vigilDir dir-vigil:0.1.0
-```
+# pull the prebuilt image
+docker pull ghcr.io/papudding/dir-vigil:0.2.0
 
-## 4. Bare metal installation
-Get the source code:
-```bash
+# or build it from source (no prebuilt artifacts required)
 git clone https://github.com/papudding/dir-vigil.git
+cd dir-vigil
+docker build -t dir-vigil:0.2.0 .
 ```
-### Front-end
-```bash
-cd frontend/h5
-yarn install
-yarn build
-```
-> Omit the nginx installation
 
-Copy the files in the `frontend/h5/dist` directory produced by the frontend compilation to the `html` directory of nginx
-Configure the config of nginx by referring to `nginx/nginx.conf`
-
-### Backend
-> Omit rust installation
+Run it with a dedicated protected directory and a persisted runtime directory:
 
 ```bash
+# Keep this key safe. Changing it makes an existing user_secret.enc unreadable.
+export DIR_VIGIL_SECRET_KEY="$(openssl rand -hex 32)"
+
+docker run -d --name dir-vigil \
+  --restart unless-stopped \
+  -p 127.0.0.1:8082:80 \
+  -v /path/to/protected/dir:/vigilDir \
+  -v ~/dir-vigil:/app \
+  -e DIR_VIGIL_SECRET_KEY="$DIR_VIGIL_SECRET_KEY" \
+  -e TIMEOUT_SECONDS=172800 \
+  -e WARNING_SECONDS=43200 \
+  -e ALERT_URL='https://your-alert-url' \
+  -e ALERT_CHANNEL=bark \
+  -e COMMENT='my protected data' \
+  dir-vigil:0.2.0
+```
+
+- `/vigilDir` is the directory that will be deleted when the timer expires.
+- `/app` stores `user_secret.enc`; application logs go to `/app/logs`. Mount a host directory or volume there to keep your 2FA enrollment and logs across container recreation.
+- Then print the enrollment QR code from a private terminal:
+
+  ```bash
+  docker exec -it dir-vigil dir-vigil --print-secret-uri
+  ```
+
+  The QR code/URI contains your 2FA secret. Do not log, screenshot, or share this output.
+
+- Open `http://127.0.0.1:8082` and keep-alive with the captcha + TOTP code.
+
+> The example publishes only to `127.0.0.1`. If you need to access it from a phone on a LAN, put a TLS reverse proxy / access control in front of it and review `nginx/nginx.conf`.
+
+## 4. Bare-metal installation
+
+Prerequisites: Rust stable, Node.js >= 18.12 (Node 22 recommended), Yarn 1.x, and nginx.
+
+```bash
+# backend
 cd backend
 cargo build --release
-```
-The resulting executable file is located in the 'backend/target/release' directory
+# binary: backend/target/release/dir-vigil
 
-Startup:
+# frontend
+cd ../frontend/h5
+yarn install --frozen-lockfile
+yarn build
+# static files: frontend/h5/dist
+```
+
+Copy `frontend/h5/dist` to nginx's `html` directory and adapt `nginx/nginx.conf` (it serves the UI and proxies `/api/` to `127.0.0.1:8080`).
+
+Run the backend from a dedicated runtime directory so `user_secret.enc` and logs are easy to find:
+
 ```bash
-./dir-vigil -d <the dir path that you wanna vigilance>
+mkdir -p ~/dir-vigil && cd ~/dir-vigil
+export DIR_VIGIL_SECRET_KEY="$(openssl rand -hex 32)"
+/absolute/path/to/dir-vigil -d /path/to/protected/dir
 ```
 
-## 5. Usage:
-1. Start the docker container or bare metal program backend
-2. Use the 2FA validator to scan the QR code printed by the terminal to obtain the 2FA code (Microsoft Authenticator recommended)
-<img width="450" alt="cmd1" src="https://github.com/user-attachments/assets/e07f7b0d-f54d-4030-b0b8-b8f22430da33" />
+The backend binds `127.0.0.1` by default. If nginx runs on another host, use `--host` and a trusted proxy.
 
-3. Visit the front-end page regularly to reset the operation
+## 5. Usage
 
-## 6. Reminder configuration
-<img width="220" alt="phone2" src="https://github.com/user-attachments/assets/56d63664-5f83-4a83-a0be-5e14eb6a4bfe" />
+1. Open the UI (or use the API directly).
+2. Click **Get captcha**, enter the displayed code and your 6-digit TOTP code, then submit.
+   If the 2FA code is wrong, the captcha is consumed immediately; click **Get captcha** again before retrying.
+3. A successful keep-alive resets the countdown; the response is a toast and an updated countdown.
+4. If no keep-alive arrives before the timeout, the watched directory is deleted and the process exits.
 
-### docker
-Supports two reminder methods: bark and server sauce
+The frontend uses `POST /keepalive` with a JSON body. If you are automating keep-alive, do not put the captcha or TOTP code in URLs.
+
+## 6. Alerts
+
+Set both `ALERT_URL` and `ALERT_CHANNEL` (`bark` or `ServerChan3`) to receive reminders while the remaining time is inside the warning window. The alert URL usually contains a private token and is never written to logs.
+
+## 7. Configuration
+
+### CLI
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `-d, --directory <DIR>` | required | Directory to track for deletion (required unless `--print-secret-uri`) |
+| `-t, --timeout-seconds <SEC>` | `86400` (24h) | Timeout before deletion |
+| `-w, --warning-seconds <SEC>` | `21600` (6h) | Start sending reminders when remaining time is below this |
+| `-c, --checking-interval <SEC>` | `1200` (20min) | Reminder check interval |
+| `--alert-url <URL>` | none | Bark / Server Chan request URL |
+| `--alert-channel <CHANNEL>` | none | `bark` or `ServerChan3` (case-sensitive) |
+| `--host <ADDR>` | `127.0.0.1` | HTTP listen address |
+| `-p, --port <PORT>` | `8080` | HTTP port |
+| `--cors-origin <ORIGIN>` | none | Allow one CORS origin (local frontend dev only) |
+| `--comment <TEXT>` | none | Comment shown on the status page |
+| `--print-secret-uri` | false | Print the TOTP enrollment QR/URI and exit |
+
+The encryption key is **not** a CLI option: it is read from the `DIR_VIGIL_SECRET_KEY` environment variable (64 hex characters or a 32-byte raw string). Generate one with `openssl rand -hex 32`.
+
+### Container environment variables
+
+| Variable | Maps to |
+| --- | --- |
+| `DIR_VIGIL_SECRET_KEY` | required AES key for `user_secret.enc` |
+| `TIMEOUT_SECONDS` | `--timeout-seconds` |
+| `WARNING_SECONDS` | `--warning-seconds` |
+| `CHECKING_INTERVAL` | `--checking-interval` |
+| `ALERT_URL` | `--alert-url` |
+| `ALERT_CHANNEL` | `--alert-channel` |
+| `COMMENT` | `--comment` |
+| `BIND_HOST` | `--host` (optional; defaults to loopback in the container) |
+
+### Upgrading from 0.1.0
+
+- `DIR_VIGIL_SECRET_KEY` is now required. Set it to the legacy key `0123456789abcdef0123456789abcdef` to keep the existing `user_secret.enc`, or delete the file and enroll again.
+- `/keepalive` is now `POST` with a JSON body instead of `GET` with query parameters.
+- TOTP/alert values are no longer printed into logs. Use `--print-secret-uri` for enrollment.
+- The backend now binds `127.0.0.1` by default.
+- The Docker image is built from source; release tarballs are no longer published.
+
+## 8. Security notes
+
+- Deletion is irreversible. Test with a temporary directory (`mktemp -d`), never with real data.
+- Keep `DIR_VIGIL_SECRET_KEY`, `user_secret.enc`, and alert URLs private. Logs no longer contain the TOTP secret or alert token, but you should still protect runtime directories and backups.
+- Keep the captcha single-use and invalidate it after a failed 2FA attempt; rely on TOTP as the real authentication factor. The included nginx config adds rate limiting and security headers.
+- For LAN/public access, use a reverse proxy with TLS and access control; the UI includes TOTP but no user account system.
+- See [SECURITY.md](./SECURITY.md) for the disclosure policy and limitations.
+
+## 9. Development
+
 ```bash
-docker run -d -p <your_pot>:80 --name dir-vigil \
--v <your_dir>:/vigilDir \
--e ALERT_URL=<your_request_url> \
--e ALERT_CHANNEL=bark \
-dir-vigil:0.1.0
-```
-server-chan: '-e ALERT_CHANNEL=ServerChan3'
+# backend
+cd backend
+cargo fmt --check
+cargo clippy --all-targets -- -D warnings
+cargo test
 
-### Bare metal
-```bash
-./dir-vigil --directory <the dir path that you wanna vigilance> \
---alert-url <your_request_url> \
---alert-channel <bark or ServerChan3>
+# frontend
+cd frontend/h5
+cp .env.example .env   # optional; defaults work without it
+yarn install --frozen-lockfile
+yarn typecheck
+yarn build
 ```
 
-## 7. Other configurable items on the backend
-| params | Type | Default value | Description |
-| --- | --- | --- | --- |
-| --directory | string | - | The directory path to be tracked for deletion |
-| --timeout-seconds | int | 86400 | Timeout (seconds) before deletion (default: 24 hours).
-| --warning-seconds | int | 21600 | The time (seconds) when the reminder starts before deletion (default: 12 hours) |
-| --checking-interval | int | 1200 | Check and alert interval (seconds) for warning_seconds (default: 20 minutes).
-| --alert-url | string | - | Reminder request address |
-| --alert-channel | string | - | Reminder channel (bark or ServerChan3) |
-| --port | int | 8080 | Service port |
-| --help | bool | false | Show help |
+CI runs the same checks (see `.github/workflows/ci.yml`). Contributions are welcome; read [CONTRIBUTING.md](./CONTRIBUTING.md) first. Do not test against real data.
+
+## 10. More
+
+- [SECURITY.md](./SECURITY.md)
+- [CONTRIBUTING.md](./CONTRIBUTING.md)
+- [CHANGELOG.md](./CHANGELOG.md)
+
+## 11. License
+
+MIT. See [LICENSE](./LICENSE).

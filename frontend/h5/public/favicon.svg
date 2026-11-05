@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="vigil" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6366f1" />
+      <stop offset="1" stop-color="#22d3ee" />
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="#070d1a" />
+  <path
+    d="M16 5.5l7.5 3.2v5.6c0 4.7-3.1 8-7.5 9.4-4.4-1.4-7.5-4.7-7.5-9.4V8.7L16 5.5z"
+    fill="url(#vigil)"
+  />
+  <path
+    d="M12.4 15.9l2.3 2.3 4.9-5.1"
+    fill="none"
+    stroke="#070d1a"
+    stroke-width="2.3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

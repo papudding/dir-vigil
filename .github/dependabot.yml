@@ -4,18 +4,37 @@ updates:
     directory: /backend
     schedule:
       interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      backend-patch-minor:
+        applies-to: version-updates
+        update-types: ["patch", "minor"]
 
   - package-ecosystem: npm
     directory: /frontend/h5
     schedule:
       interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      frontend-patch-minor:
+        applies-to: version-updates
+        update-types: ["patch", "minor"]
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns: ["*"]
 
   - package-ecosystem: docker
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "rust"
+        update-types: ["version-update:semver-major"]

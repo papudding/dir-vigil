@@ -17,7 +17,7 @@ COPY frontend/h5/ ./
 RUN yarn build
 
 # ---------- backend ----------
-FROM rust:1.98-alpine AS backend
+FROM rust:1.99-alpine AS backend
 ARG HTTP_PROXY
 ARG HTTPS_PROXY
 ARG http_proxy
